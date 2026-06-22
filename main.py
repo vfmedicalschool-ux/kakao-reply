@@ -1,24 +1,20 @@
 import imaplib
-import smtplib
 import email
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from email.header import decode_header
 import time
 import os
+import requests
 
 # ================================================
-# 설정값 (Railway 환경변수로 입력)
-# ================================================
-EMAIL_ADDR   = os.environ.get("EMAIL", "")
-APP_PASSWORD = os.environ.get("PASSWORD", "")
-KEYWORD      = os.environ.get("KEYWORD", "")
-REPLY_BODY   = os.environ.get("REPLY_BODY", "")
-CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "300"))
+EMAIL_ADDR       = os.environ.get("EMAIL", "")
+APP_PASSWORD     = os.environ.get("PASSWORD", "")
+KEYWORD          = os.environ.get("KEYWORD", "")
+REPLY_BODY       = os.environ.get("REPLY_BODY", "")
+CHECK_INTERVAL   = int(os.environ.get("CHECK_INTERVAL", "300"))
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 
 IMAP_SERVER = "imap.kakao.com"
 IMAP_PORT   = 993
-SMTP_SERVER = "smtp.kakao.com"
 # ================================================
 
 def decode_str(s):
@@ -39,19 +35,23 @@ def extract_addr(raw):
     return raw.strip()
 
 def send_reply(to_addr, original_subject):
-    msg = MIMEMultipart("alternative")
-    msg["From"]    = EMAIL_ADDR
-    msg["To"]      = to_addr
-    msg["Subject"] = f"Re: {original_subject}"
-    msg.attach(MIMEText(REPLY_BODY, "plain", "utf-8"))
-
-    # 587 포트 STARTTLS 방식으로 변경
-    with smtplib.SMTP(SMTP_SERVER, 587) as smtp:
-        smtp.ehlo()
-        smtp.starttls()
-        smtp.login(EMAIL_ADDR, APP_PASSWORD)
-        smtp.sendmail(EMAIL_ADDR, to_addr, msg.as_string())
-    print(f"[OK] 자동 회신 완료 → {to_addr}")
+    response = requests.post(
+        "https://api.sendgrid.com/v3/mail/send",
+        headers={
+            "Authorization": f"Bearer {SENDGRID_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "personalizations": [{"to": [{"email": to_addr}]}],
+            "from": {"email": EMAIL_ADDR},
+            "subject": f"Re: {original_subject}",
+            "content": [{"type": "text/plain", "value": REPLY_BODY}]
+        }
+    )
+    if response.status_code == 202:
+        print(f"[OK] 자동 회신 완료 → {to_addr}")
+    else:
+        print(f"[ERROR] SendGrid: {response.status_code} / {response.text}")
 
 def run_once():
     try:
