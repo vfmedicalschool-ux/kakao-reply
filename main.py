@@ -5,17 +5,18 @@ import time
 import os
 import requests
 
-# ================================================
-EMAIL_ADDR       = os.environ.get("EMAIL", "")
-APP_PASSWORD     = os.environ.get("PASSWORD", "")
-KEYWORD          = os.environ.get("KEYWORD", "")
-REPLY_BODY       = os.environ.get("REPLY_BODY", "")
+def clean(val):
+    return val.strip().strip('"').strip("'").strip()
+
+EMAIL_ADDR       = clean(os.environ.get("EMAIL", ""))
+APP_PASSWORD     = clean(os.environ.get("PASSWORD", ""))
+KEYWORD          = clean(os.environ.get("KEYWORD", ""))
+REPLY_BODY       = os.environ.get("REPLY_BODY", "").strip()
 CHECK_INTERVAL   = int(os.environ.get("CHECK_INTERVAL", "300"))
-SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
+SENDGRID_API_KEY = clean(os.environ.get("SENDGRID_API_KEY", ""))
 
 IMAP_SERVER = "imap.kakao.com"
 IMAP_PORT   = 993
-# ================================================
 
 def decode_str(s):
     if not s:
@@ -38,13 +39,13 @@ def send_reply(to_addr, original_subject):
     response = requests.post(
         "https://api.sendgrid.com/v3/mail/send",
         headers={
-            "Authorization": f"Bearer {SENDGRID_API_KEY}",
+            "Authorization": "Bearer " + SENDGRID_API_KEY,
             "Content-Type": "application/json"
         },
         json={
             "personalizations": [{"to": [{"email": to_addr}]}],
             "from": {"email": EMAIL_ADDR},
-            "subject": f"Re: {original_subject}",
+            "subject": "Re: " + original_subject,
             "content": [{"type": "text/plain", "value": REPLY_BODY}]
         }
     )
@@ -86,6 +87,7 @@ if __name__ == "__main__":
     print(f"계정   : {EMAIL_ADDR}")
     print(f"키워드 : {KEYWORD}")
     print(f"주기   : {CHECK_INTERVAL}초마다 확인")
+    print(f"API키  : {SENDGRID_API_KEY[:15]}... (길이:{len(SENDGRID_API_KEY)})")
     print("================================")
 
     while True:
