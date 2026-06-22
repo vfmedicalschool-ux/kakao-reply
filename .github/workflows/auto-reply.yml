@@ -20,3 +20,4 @@ jobs:
           PASSWORD:   ${{ secrets.PASSWORD }}
           KEYWORD:    ${{ secrets.KEYWORD }}
           REPLY_BODY: ${{ secrets.REPLY_BODY }}
+REPLY_SUBJECT: ${{ secrets.REPLY_SUBJECT }}
