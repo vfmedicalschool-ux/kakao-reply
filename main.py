@@ -14,12 +14,11 @@ EMAIL_ADDR   = os.environ.get("EMAIL", "")
 APP_PASSWORD = os.environ.get("PASSWORD", "")
 KEYWORD      = os.environ.get("KEYWORD", "")
 REPLY_BODY   = os.environ.get("REPLY_BODY", "")
-CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "300"))  # 기본 5분
+CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "300"))
 
 IMAP_SERVER = "imap.kakao.com"
 IMAP_PORT   = 993
 SMTP_SERVER = "smtp.kakao.com"
-SMTP_PORT   = 465
 # ================================================
 
 def decode_str(s):
@@ -46,7 +45,10 @@ def send_reply(to_addr, original_subject):
     msg["Subject"] = f"Re: {original_subject}"
     msg.attach(MIMEText(REPLY_BODY, "plain", "utf-8"))
 
-    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as smtp:
+    # 587 포트 STARTTLS 방식으로 변경
+    with smtplib.SMTP(SMTP_SERVER, 587) as smtp:
+        smtp.ehlo()
+        smtp.starttls()
         smtp.login(EMAIL_ADDR, APP_PASSWORD)
         smtp.sendmail(EMAIL_ADDR, to_addr, msg.as_string())
     print(f"[OK] 자동 회신 완료 → {to_addr}")
@@ -63,16 +65,16 @@ def run_once():
 
         for uid in ids:
             _, raw = imap.fetch(uid, "(RFC822)")
-            msg      = email.message_from_bytes(raw[0][1])
-            subject  = decode_str(msg.get("Subject", ""))
-            from_raw = msg.get("From", "")
+            msg       = email.message_from_bytes(raw[0][1])
+            subject   = decode_str(msg.get("Subject", ""))
+            from_raw  = msg.get("From", "")
             from_addr = extract_addr(from_raw)
 
             print(f"  제목: {subject}")
 
             if KEYWORD in subject and EMAIL_ADDR not in from_addr:
                 send_reply(from_addr, subject)
-                imap.store(uid, "+FLAGS", "\\Seen")  # 읽음 처리 (중복 방지)
+                imap.store(uid, "+FLAGS", "\\Seen")
 
         imap.logout()
 
