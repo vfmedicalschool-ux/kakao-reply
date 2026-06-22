@@ -2,8 +2,8 @@ name: 카카오메일 자동 회신
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # 5분마다 실행
-  workflow_dispatch:         # 수동 테스트용
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
 
 jobs:
   reply:
@@ -16,8 +16,8 @@ jobs:
       - name: 자동 회신 실행
         run: python main.py
         env:
-          EMAIL:      ${{ secrets.EMAIL }}
-          PASSWORD:   ${{ secrets.PASSWORD }}
-          KEYWORD:    ${{ secrets.KEYWORD }}
-          REPLY_BODY: ${{ secrets.REPLY_BODY }}
-REPLY_SUBJECT: ${{ secrets.REPLY_SUBJECT }}
+          EMAIL:         ${{ secrets.EMAIL }}
+          PASSWORD:      ${{ secrets.PASSWORD }}
+          KEYWORD:       ${{ secrets.KEYWORD }}
+          REPLY_BODY:    ${{ secrets.REPLY_BODY }}
+          REPLY_SUBJECT: ${{ secrets.REPLY_SUBJECT }}
