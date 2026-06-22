@@ -3,9 +3,8 @@ import smtplib
 import email
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
+from email.mime.application import MIMEApplication
 from email.header import decode_header
-from email import encoders
 import os
 
 def clean(val):
@@ -21,7 +20,6 @@ IMAP_PORT   = 993
 SMTP_SERVER = "smtp.kakao.com"
 SMTP_PORT   = 465
 
-# 첨부할 PDF 파일 목록
 ATTACHMENTS = [
     "27학년도_VF_풀케어반 등록TEST_일반생물학 50문제.pdf",
     "27학년도_VF_풀케어반 등록TEST_일반화학 유기화학 30+10문제.pdf",
@@ -51,20 +49,18 @@ def send_reply(to_addr, original_subject):
     msg["Subject"] = "Re: " + original_subject
     msg.attach(MIMEText(REPLY_BODY, "plain", "utf-8"))
 
-    # PDF 첨부
     for filepath in ATTACHMENTS:
         if os.path.exists(filepath):
             with open(filepath, "rb") as f:
-                part = MIMEBase("application", "octet-stream")
-                part.set_payload(f.read())
-                encoders.encode_base64(part)
-                filename = os.path.basename(filepath)
+                part = MIMEApplication(f.read(), _subtype="pdf")
+                # 한글 파일명 RFC 2231 인코딩
                 part.add_header(
                     "Content-Disposition",
-                    f'attachment; filename="{filename}"'
+                    "attachment",
+                    filename=("utf-8", "", os.path.basename(filepath))
                 )
                 msg.attach(part)
-            print(f"  첨부: {filepath}")
+            print(f"  첨부 완료: {filepath}")
         else:
             print(f"  [경고] 파일 없음: {filepath}")
 
