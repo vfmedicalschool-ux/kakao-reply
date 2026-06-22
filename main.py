@@ -10,10 +10,11 @@ import os
 def clean(val):
     return val.strip().strip('"').strip("'").strip()
 
-EMAIL_ADDR   = clean(os.environ.get("EMAIL", ""))
-APP_PASSWORD = clean(os.environ.get("PASSWORD", ""))
-KEYWORD      = clean(os.environ.get("KEYWORD", ""))
-REPLY_BODY   = os.environ.get("REPLY_BODY", "").strip()
+EMAIL_ADDR    = clean(os.environ.get("EMAIL", ""))
+APP_PASSWORD  = clean(os.environ.get("PASSWORD", ""))
+KEYWORD       = clean(os.environ.get("KEYWORD", ""))
+REPLY_BODY    = os.environ.get("REPLY_BODY", "").strip()
+REPLY_SUBJECT = clean(os.environ.get("REPLY_SUBJECT", ""))
 
 IMAP_SERVER = "imap.kakao.com"
 IMAP_PORT   = 993
@@ -46,14 +47,13 @@ def send_reply(to_addr, original_subject):
     msg = MIMEMultipart()
     msg["From"]    = EMAIL_ADDR
     msg["To"]      = to_addr
-    msg["Subject"] = "Re: " + original_subject
+    msg["Subject"] = REPLY_SUBJECT if REPLY_SUBJECT else "Re: " + original_subject
     msg.attach(MIMEText(REPLY_BODY, "plain", "utf-8"))
 
     for filepath in ATTACHMENTS:
         if os.path.exists(filepath):
             with open(filepath, "rb") as f:
                 part = MIMEApplication(f.read(), _subtype="pdf")
-                # 한글 파일명 RFC 2231 인코딩
                 part.add_header(
                     "Content-Disposition",
                     "attachment",
@@ -72,6 +72,7 @@ def send_reply(to_addr, original_subject):
 def run():
     print(f"계정   : {EMAIL_ADDR}")
     print(f"키워드 : {KEYWORD}")
+    print(f"제목   : {REPLY_SUBJECT}")
 
     imap = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
     imap.login(EMAIL_ADDR, APP_PASSWORD)
