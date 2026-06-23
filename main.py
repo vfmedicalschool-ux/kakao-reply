@@ -24,6 +24,8 @@ SMTP_PORT   = 465
 ATTACHMENTS = [
     "27학년도_VF_풀케어반 등록TEST_일반생물학 50문제.pdf",
     "27학년도_VF_풀케어반 등록TEST_일반화학 유기화학 30+10문제.pdf",
+    "VF 개별 상담용 인적사항 설문 양식_final.hwp",
+    "VF 개별 상담용 인적사항 설문 양식_final.pdf",
 ]
 
 def decode_str(s):
@@ -43,6 +45,15 @@ def extract_addr(raw):
         return raw.split("<")[1].strip().rstrip(">")
     return raw.strip()
 
+def get_subtype(filename):
+    ext = filename.lower().split(".")[-1]
+    if ext == "pdf":
+        return "pdf"
+    elif ext == "hwp":
+        return "x-hwp"
+    else:
+        return "octet-stream"
+
 def send_reply(to_addr, original_subject):
     msg = MIMEMultipart()
     msg["From"]    = EMAIL_ADDR
@@ -53,7 +64,7 @@ def send_reply(to_addr, original_subject):
     for filepath in ATTACHMENTS:
         if os.path.exists(filepath):
             with open(filepath, "rb") as f:
-                part = MIMEApplication(f.read(), _subtype="pdf")
+                part = MIMEApplication(f.read(), _subtype=get_subtype(filepath))
                 part.add_header(
                     "Content-Disposition",
                     "attachment",
